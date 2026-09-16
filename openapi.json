@@ -1,0 +1,651 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DocBrief",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/process": {
+      "post": {
+        "summary": "Process Document",
+        "operationId": "process_document_process_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/process/upload": {
+      "post": {
+        "summary": "Process Upload",
+        "operationId": "process_upload_process_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_process_upload_process_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/save-note": {
+      "post": {
+        "summary": "Save Note Via Mcp",
+        "operationId": "save_note_via_mcp_mcp_save_note_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveNoteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/list-notes": {
+      "post": {
+        "summary": "List Notes Via Mcp",
+        "description": "Read the notes back, through the same bridge grant.\n\nIts counterpart `save_note` returned an id that nothing could look up and a\nstore that vanished on restart, which proved the bridge worked and nothing\nelse. This is classified read_only, so unlike delete_all_notes it is never\nheld for approval.",
+        "operationId": "list_notes_via_mcp_mcp_list_notes_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveNoteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/delete-all-notes": {
+      "post": {
+        "summary": "Delete All Notes Via Mcp",
+        "description": "Ask to delete every note -- and expect to be stopped.\n\n`delete_all_notes` is classified DESTRUCTIVE by the bridge's own tool\nclassifier, which makes it a sensitive operation: the call is held and\nqueued for an operator instead of executed. Approve or deny it under\nSecurity, then call this again. Nothing in a shipped starter previously put\nanything in that queue.",
+        "operationId": "delete_all_notes_via_mcp_mcp_delete_all_notes_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveNoteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demo/touch-agent-file": {
+      "post": {
+        "summary": "Touch Agent File",
+        "description": "Write a file containing a canonical, harmless prompt-injection test\nstring into the agent-files directory, to demonstrate Defender's\ncontent scanner actually catching something. The same-container\nwatcher (agentbox.agentic_files_notifier) relays any write under this\ndirectory to Defender, which scans file *content* for known\nprompt-injection patterns — a clean/benign write produces no finding\nand (by design) no audit entry, so an earlier version of this demo\nthat just wrote a timestamp silently did nothing observable. This\nstring matches Defender's \"ignore previous instructions\" and\n\"system-prompt extraction\" rules on purpose, so a real CRITICAL\nfinding + audit event actually appears in Security > Audit Log.",
+        "operationId": "touch_agent_file_demo_touch_agent_file_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefenderDemoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/process/stream": {
+      "post": {
+        "summary": "Process Document Streaming",
+        "description": "Same work as /process, but emitting the agent's turns as they happen.\n\n/process returns one JSON object after the agent has finished, which shows\nthe result and hides the agency -- and the agency is what AgentBox is\nsecuring. This streams `token` events as text arrives and a `tool` event\neach time the agent calls something, so an operator can watch the loop run\ninside the sandbox rather than infer it afterwards.\n\nErrors after the first byte cannot become an HTTP status: the response has\nalready started with 200. They are sent as a terminal `error` event\ninstead, which is why the policy mapping below is duplicated rather than\nshared with _run_backend.",
+        "operationId": "process_document_streaming_process_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demo/install-package": {
+      "post": {
+        "summary": "Install Package Via Trustgate",
+        "description": "Install a package, and report what TrustGate decided about it.\n\nThe one control a customer could not previously reach from anywhere in the\nproduct: the admin console can list and decide TrustGate approvals, but\nnothing could CREATE one, so the queue was permanently empty and the whole\npackage-governance story was invisible unless you had a shell on the host.\n\nThree outcomes are worth trying, and they are policy decisions, not\nfailures -- a non-zero exit code here usually means the platform worked:\n\n  allow  an allowlisted package installs normally\n  block  a denylisted package is refused before anything is downloaded\n  hold   anything else is parked for approval, which is the entry that\n         then appears in Security -> TrustGate approvals for you to decide",
+        "operationId": "install_package_via_trustgate_demo_install_package_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallPackageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallPackageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demo/fetch-url": {
+      "post": {
+        "summary": "Fetch Url Through Secureproxy",
+        "description": "Try to open an outbound tunnel, and report SecureProxy's own answer.\n\nThis app has no route to the internet except SecureProxy's forward proxy,\nwhich enforces the egress policy on its Applications-tab record. Shipped\npolicy is whitelist with an empty list, so every destination is refused:\nexpect `status: 403`.\n\nTo see the other half, add the host to Allowed destinations on this\napplication and call it again -- `status: 200` means the tunnel opened.\nThat before-and-after is the demonstration; a single call only shows one\nside of a policy that was never visibly doing anything.",
+        "operationId": "fetch_url_through_secureproxy_demo_fetch_url_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchUrlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchUrlResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_process_upload_process_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_process_upload_process_upload_post"
+      },
+      "DefenderDemoResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "path",
+          "note"
+        ],
+        "title": "DefenderDemoResponse"
+      },
+      "FetchUrlRequest": {
+        "properties": {
+          "host": {
+            "type": "string",
+            "title": "Host"
+          },
+          "port": {
+            "type": "integer",
+            "title": "Port",
+            "default": 443
+          }
+        },
+        "type": "object",
+        "required": [
+          "host"
+        ],
+        "title": "FetchUrlRequest"
+      },
+      "FetchUrlResponse": {
+        "properties": {
+          "host": {
+            "type": "string",
+            "title": "Host"
+          },
+          "port": {
+            "type": "integer",
+            "title": "Port"
+          },
+          "proxied": {
+            "type": "boolean",
+            "title": "Proxied"
+          },
+          "status": {
+            "type": "integer",
+            "title": "Status"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "host",
+          "port",
+          "proxied",
+          "status",
+          "reason"
+        ],
+        "title": "FetchUrlResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InstallPackageRequest": {
+        "properties": {
+          "package": {
+            "type": "string",
+            "title": "Package"
+          },
+          "manager": {
+            "type": "string",
+            "title": "Manager",
+            "default": "pip"
+          }
+        },
+        "type": "object",
+        "required": [
+          "package"
+        ],
+        "title": "InstallPackageRequest"
+      },
+      "InstallPackageResponse": {
+        "properties": {
+          "package": {
+            "type": "string",
+            "title": "Package"
+          },
+          "manager": {
+            "type": "string",
+            "title": "Manager"
+          },
+          "verdict": {
+            "type": "string",
+            "title": "Verdict"
+          },
+          "exit_code": {
+            "type": "integer",
+            "title": "Exit Code"
+          },
+          "output": {
+            "type": "string",
+            "title": "Output"
+          },
+          "infra_failure": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infra Failure"
+          }
+        },
+        "type": "object",
+        "required": [
+          "package",
+          "manager",
+          "verdict",
+          "exit_code",
+          "output"
+        ],
+        "title": "InstallPackageResponse"
+      },
+      "ProcessRequest": {
+        "properties": {
+          "document": {
+            "type": "string",
+            "title": "Document"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document"
+        ],
+        "title": "ProcessRequest"
+      },
+      "ProcessResponse": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "action_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Action Items"
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "backend": {
+            "type": "string",
+            "title": "Backend"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "action_items",
+          "answer",
+          "backend"
+        ],
+        "title": "ProcessResponse"
+      },
+      "SaveNoteRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "SaveNoteRequest"
+      },
+      "SaveNoteResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "bridge_server": {
+            "type": "string",
+            "title": "Bridge Server"
+          },
+          "bridge_tool": {
+            "type": "string",
+            "title": "Bridge Tool"
+          },
+          "result": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Result"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "bridge_server",
+          "bridge_tool",
+          "result"
+        ],
+        "title": "SaveNoteResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

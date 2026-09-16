@@ -1,0 +1,49 @@
+# AgentBox reads this file from your repository root.
+#
+# Anything you leave out is guessed from your source and shown for
+# confirmation when you add the application. Unknown keys are reported as
+# warnings rather than ignored, so a typo tells you.
+
+name: python-claude
+agent_type: claude
+
+# Which provider SecureProxy routes this app's model calls to. Change it to
+# route the same code at a different provider without touching the code.
+preferred_provider: anthropic
+
+port: 8080
+health_endpoint: /health
+
+# OpenAPI document for this app's routes. It is what enables the "Try API"
+# console on the application's card -- the button only appears if this file
+# is present and parses.
+api_doc: openapi.json
+
+# Where the agent's own files live, and where AgentBox mounts the skills it
+# has approved for this app (read-only).
+runtime_agentic_files: /app/agent-state
+runtime_skills: /app/skills
+
+# The only writable path. Everything else in the container is read-only.
+filesystem_writable:
+  - /app/scratch
+
+# Keep what the app writes across a restart, and offer "Reset workspace" on
+# its card. Set false for a container that should start clean every time.
+workspace_persistent: true
+
+# Deny by default: this app can reach only what is listed here.
+#
+# Leaving the list empty is a complete, working posture, not a placeholder.
+# Package registries are already covered by TrustGate's baseline, and the
+# model is reached through SecureProxy rather than direct egress -- so
+# neither belongs here.
+#
+# Add a destination only when your app calls a third-party API of its own.
+# Entries may be domains, wildcards (*.example.com), IPs or CIDRs, or URL
+# prefixes (https://api.example.com/v1/*):
+#
+#   network_destination_list:
+#     - api.stripe.com
+network_mode: whitelist
+network_destination_list: []
